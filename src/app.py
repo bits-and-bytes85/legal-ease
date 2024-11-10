@@ -35,7 +35,7 @@ def extract_text_from_pdf(pdf_bytes):
         # Reset stream and use pdfplumber as a fallback
     return text.strip()
 
-def chunk_text(text, max_token_length=1024, min_chunk_length=50):
+def chunk_text(text, max_token_length=3000, min_chunk_length=50):
     """Split text into smaller chunks and handle short chunks gracefully."""
     sentences = text.split(". ")
     chunks = []
@@ -51,7 +51,8 @@ def chunk_text(text, max_token_length=1024, min_chunk_length=50):
 
     if len(current_chunk) >= min_chunk_length:
         chunks.append(current_chunk.strip())
-
+    print(len(chunks))
+    print(len(chunks[0]))
     return chunks
 
 # @app.route('/test', methods=['GET'])
@@ -80,10 +81,12 @@ def summarize():
     summaries = []
     for chunk in chunks:
         try:
-            summary = summarizer(chunk, max_length=130, min_length=30, do_sample=False)
+            summary = summarizer(chunk, max_length=200, min_length=30, do_sample=False)
             summaries.append(summary[0]['summary_text'])
         except Exception as inner_e:
-            summaries.append(f"Failed to summarize chunk: {inner_e}")
+            # summaries.append(f"Failed to summarize chunk: {inner_e}")
+            summaries.append(f"")
+
 
     return jsonify({"summary": " ".join(summaries)})
  
