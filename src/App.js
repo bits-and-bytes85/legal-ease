@@ -1,25 +1,10 @@
-// import React, { useState, useEffect } from 'react';
-// import './App.css';
-
-// function App() {
-
-//   return (
-//     <form action="{{ url_for('summarize') }}" method="post">
-//             <label for="article">Enter your article:</label><br></br>
-//             <textarea id="article" name="article" rows="10" cols="50"></textarea><br></br>
-//             <button type="submit">Summarize</button>
-//         </form>
-//   );
-// }
-
-// export default App;
-
 import React, { useState } from 'react';
 
 function App() {
     const [file, setFile] = useState(null);
     const [summary, setSummary] = useState('');
     const [error, setError] = useState('');
+    const [loading, setLoading] = useState(false);
 
     const handleFileChange = (e) => {
         setFile(e.target.files[0]);
@@ -27,8 +12,15 @@ function App() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setError(''); // clear previous error
-        if (!file) return;
+        setError('');
+        setSummary('');
+        setLoading(true); // Start loading indicator
+
+        if (!file) {
+            setError('Please select a file.');
+            setLoading(false);
+            return;
+        }
 
         const formData = new FormData();
         formData.append('file', file);
@@ -42,23 +34,48 @@ function App() {
             const data = await response.json();
 
             if (data.error) {
-                setError(data.error); 
+                setError(data.error);
             } else {
-                setSummary(data.summary); 
+                setSummary(data.summary);
             }
         } catch (error) {
             console.error('Error:', error);
             setError('Failed to connect to the backend. Please try again.');
+        } finally {
+            setLoading(false); // Stop loading indicator
         }
+    };
+
+    const handleClear = () => {
+        setFile(null);
+        setSummary('');
+        setError('');
+    };
+
+    const handleDownload = () => {
+        const blob = new Blob([summary], { type: 'text/plain' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = 'summary.txt';
+        link.click();
     };
 
     return (
         <div className="App">
-            <h1>Legal-ease: Simplify your legal documents</h1>
+          <script src="https://kit.fontawesome.com/663b498e89.js" crossorigin="anonymous"></script>
+            <h1>Legal-ease</h1>  <i class="fa-solid fa-feather"></i>
+            <h2>Simplify your legal documents:</h2>
             <form onSubmit={handleSubmit}>
-                <input type="file" onChange={handleFileChange} />
-                <button type="submit">Upload and Summarize</button>
+                <input 
+                    type="file" 
+                    accept=".pdf" 
+                    onChange={handleFileChange} 
+                /><br></br>
+                <button type="submit" disabled={loading}>Summarize</button>
+                <button type="button" onClick={handleClear}>Clear</button>
             </form>
+
+            {loading && <p>Loading... Please wait.</p>}
 
             {error && (
                 <div style={{ color: 'red' }}>
@@ -71,6 +88,8 @@ function App() {
                 <div>
                     <h2>Summary</h2>
                     <p>{summary}</p>
+                    <p><strong>Word Count:</strong> {summary.split(/\s+/).length}</p>
+                    <button onClick={handleDownload}>Download Summary</button>
                 </div>
             )}
         </div>
